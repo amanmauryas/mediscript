@@ -367,7 +367,7 @@ const ProfilePage: React.FC = () => {
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
                           className="btn-secondary"
-                          disabled={!isEditing}
+                          
                         >
                           Upload Image
                         </button>
@@ -377,7 +377,7 @@ const ProfilePage: React.FC = () => {
                           onChange={handleImageUpload}
                           accept="image/*"
                           className="hidden"
-                          disabled={!isEditing}
+                          
                         />
                         <p className="mt-1 text-sm text-gray-500">
                           Recommended size: 800x200 pixels
