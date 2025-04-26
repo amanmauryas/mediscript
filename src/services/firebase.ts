@@ -564,9 +564,6 @@ export const importMedicinesFromCSV = async (doctorId: string, csvData: string) 
             case 'short_composition2':
               medicine.composition2 = value;
               break;
-            case 'category':
-              medicine.category = value;
-              break;
           }
         }
       });
