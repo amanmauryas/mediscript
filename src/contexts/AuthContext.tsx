@@ -1,17 +1,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth, onAuthStateChanged, getDoctorProfile } from '../services/firebase';
+import { auth, onAuthStateChanged, getDoctorProfile, signOut as firebaseSignOut } from '../services/firebase';
 import { AuthUser, Doctor } from '../types';
 
 interface AuthContextType {
   currentUser: AuthUser | null;
   doctorProfile: Doctor | null;
   loading: boolean;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   currentUser: null,
   doctorProfile: null,
-  loading: true
+  loading: true,
+  signOut: async () => {}
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -20,6 +22,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [doctorProfile, setDoctorProfile] = useState<Doctor | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const signOut = async () => {
+    try {
+      await firebaseSignOut();
+      setCurrentUser(null);
+      setDoctorProfile(null);
+    } catch (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -47,8 +60,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               specialization: '',
               phone: '',
               address: '',
-              clinic: '',
+              contact: '',
+              clinic: {
+                name: '',
+                address: '',
+                phone: '',
+                email: '',
+                license: '',
+                logo: ''
+              },
+              clinicInfo: {
+                name: '',
+                address: '',
+                phone: '',
+                email: ''
+              },
               licenseNumber: '',
+              createdAt: new Date(),
               updatedAt: new Date()
             });
           }
@@ -71,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ currentUser, doctorProfile, loading }}>
+    <AuthContext.Provider value={{ currentUser, doctorProfile, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

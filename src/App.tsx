@@ -14,9 +14,10 @@ import RegisterPage from './pages/Auth/RegisterPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 
 // Prescription Pages
+import PrescriptionsPage from './pages/Prescription/PrescriptionsPage';
 import NewPrescriptionPage from './pages/Prescription/NewPrescriptionPage';
 import PrescriptionDetailsPage from './pages/Prescription/PrescriptionDetailsPage';
-import PrescriptionsPage from './pages/Prescription/PrescriptionsPage';
+import EditPrescriptionPage from './pages/Prescription/EditPrescriptionPage';
 
 // Patient Pages
 import PatientsPage from './pages/Patients/PatientsPage';
@@ -33,6 +34,9 @@ import ProfilePage from './pages/Profile/ProfilePage';
 
 // Settings Pages
 import SettingsPage from './pages/Settings/SettingsPage';
+
+// Medicine Pages
+import MedicinesPage from './pages/Medicines/MedicinesPage';
 
 function App() {
   return (
@@ -151,6 +155,24 @@ function App() {
                   <SettingsPage />
                 </AuthGuard>
               } 
+            />
+
+            <Route
+              path="/medicines"
+              element={
+                <AuthGuard>
+                  <MedicinesPage />
+                </AuthGuard>
+              }
+            />
+
+            <Route
+              path="/prescriptions/:id/edit"
+              element={
+                <AuthGuard>
+                  <EditPrescriptionPage />
+                </AuthGuard>
+              }
             />
 
             {/* Redirect Routes */}

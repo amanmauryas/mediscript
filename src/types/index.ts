@@ -167,3 +167,19 @@ export interface Settings {
   autoSave: boolean;
   updatedAt: Date;
 }
+
+export interface Medicine {
+  id: string;
+  name: string;
+  category: string;
+  dosage: string;
+  frequency: string;
+  instructions: string;
+  sideEffects: string[];
+  contraindications: string[];
+  doctorId: string;
+  isActive: boolean;
+  lastUsed?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}

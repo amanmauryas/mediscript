@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { getPrescriptionsByDoctor } from '../../services/firebase';
 import { format } from 'date-fns';
-import { FileText, Plus, Search } from 'lucide-react';
+import { FileText, Plus, Search, Edit } from 'lucide-react';
 import MainLayout from '../../components/Layout/MainLayout';
 
 const PrescriptionsPage: React.FC = () => {
@@ -85,14 +85,22 @@ const PrescriptionsPage: React.FC = () => {
                           <FileText className="h-6 w-6 text-primary-600" />
                         </div>
                       </div>
-                      <div className="ml-4">
+                      <div className="ml-4 flex-1">
                         <div className="text-sm font-medium text-primary-600">{prescription.patientName}</div>
                         <div className="text-sm text-gray-500">
                           {prescription.diagnosis?.join(', ')}
                         </div>
                       </div>
-                      <div className="ml-auto text-sm text-gray-500">
-                        {format(prescription.visitDate.toDate(), 'MMM d, yyyy')}
+                      <div className="ml-auto flex items-center space-x-4">
+                        <div className="text-sm text-gray-500">
+                          {format(prescription.visitDate.toDate(), 'MMM d, yyyy')}
+                        </div>
+                        <Link
+                          to={`/prescriptions/${prescription.id}/edit`}
+                          className="text-gray-400 hover:text-primary-600"
+                        >
+                          <Edit className="h-5 w-5" />
+                        </Link>
                       </div>
                     </div>
                   </div>

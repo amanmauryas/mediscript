@@ -21,7 +21,8 @@ import {
   deleteDoc,
   orderBy,
   limit,
-  Timestamp 
+  Timestamp,
+  writeBatch
 } from 'firebase/firestore';
 
 // Firebase config - replace with your own config
@@ -238,6 +239,20 @@ export const getPrescriptionById = async (prescriptionId: string) => {
       throw new Error('Prescription not found');
     }
   } catch (error) {
+    throw error;
+  }
+};
+
+export const updatePrescription = async (prescriptionId: string, data: any) => {
+  try {
+    const prescriptionRef = doc(db, 'prescriptions', prescriptionId);
+    await updateDoc(prescriptionRef, {
+      ...data,
+      updatedAt: Timestamp.now()
+    });
+    return { id: prescriptionId, ...data };
+  } catch (error) {
+    console.error('Error updating prescription:', error);
     throw error;
   }
 };
@@ -516,6 +531,66 @@ export const createDefaultTemplates = async (doctorId: string) => {
     }
   } catch (error) {
     console.error('Error creating default templates:', error);
+    throw error;
+  }
+};
+
+export const importMedicinesFromCSV = async (doctorId: string, csvData: string) => {
+  try {
+    // Parse CSV data
+    const rows = csvData.split('\n').map(row => row.split(','));
+    const headers = rows[0];
+    const medicines = rows.slice(1).map(row => {
+      const medicine: any = {
+        doctorId,
+        isActive: true,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      };
+      
+      headers.forEach((header, index) => {
+        const value = row[index]?.trim();
+        if (value) {
+          switch (header.toLowerCase()) {
+            case 'name':
+              medicine.name = value;
+              break;
+            case 'category':
+              medicine.category = value;
+              break;
+            case 'dosage':
+              medicine.dosage = value;
+              break;
+            case 'frequency':
+              medicine.frequency = value;
+              break;
+            case 'instructions':
+              medicine.instructions = value;
+              break;
+            case 'sideeffects':
+              medicine.sideEffects = value.split(';').map((s: string) => s.trim());
+              break;
+            case 'contraindications':
+              medicine.contraindications = value.split(';').map((s: string) => s.trim());
+              break;
+          }
+        }
+      });
+      
+      return medicine;
+    });
+
+    // Batch write to Firestore
+    const batch = writeBatch(db);
+    medicines.forEach(medicine => {
+      const docRef = doc(collection(db, 'medications'));
+      batch.set(docRef, medicine);
+    });
+
+    await batch.commit();
+    return medicines.length;
+  } catch (error) {
+    console.error('Error importing medicines:', error);
     throw error;
   }
 };

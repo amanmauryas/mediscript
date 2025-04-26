@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, FilePlus, Users, FileText, Settings, Menu, X, Cable as Capsule, ClipboardList, User } from 'lucide-react';
+import { Home, FilePlus, Users, FileText, Settings, Menu, X, Cable as Capsule, ClipboardList, User, Pill } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,7 +10,7 @@ const Sidebar: React.FC = () => {
     { name: 'New Prescription', to: '/prescriptions/new', icon: <FilePlus size={20} /> },
     { name: 'Patients', to: '/patients', icon: <Users size={20} /> },
     { name: 'Prescriptions', to: '/prescriptions', icon: <FileText size={20} /> },
-    { name: 'Medications', to: '/medications', icon: <Capsule size={20} /> },
+    { name: 'Medicines', to: '/medicines', icon: <Pill size={20} /> },
     { name: 'Templates', to: '/templates', icon: <ClipboardList size={20} /> },
     { name: 'Profile', to: '/profile', icon: <User size={20} /> },
     { name: 'Settings', to: '/settings', icon: <Settings size={20} /> },
