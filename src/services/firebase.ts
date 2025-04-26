@@ -610,4 +610,63 @@ export const importMedicinesFromCSV = async (doctorId: string, csvData: string) 
   }
 };
 
+// Appointment functions
+export const createAppointment = async (appointmentData: any) => {
+  try {
+    const appointmentRef = doc(collection(db, 'appointments'));
+    await setDoc(appointmentRef, {
+      ...appointmentData,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
+    });
+    return { id: appointmentRef.id, ...appointmentData };
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    throw error;
+  }
+};
+
+export const getAppointmentsByDoctor = async (doctorId: string) => {
+  try {
+    const q = query(
+      collection(db, 'appointments'),
+      where('doctorId', '==', doctorId),
+      orderBy('appointmentDate', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Error getting appointments:', error);
+    throw error;
+  }
+};
+
+export const getAppointmentById = async (appointmentId: string) => {
+  try {
+    const docSnap = await getDoc(doc(db, 'appointments', appointmentId));
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() };
+    } else {
+      throw new Error('Appointment not found');
+    }
+  } catch (error) {
+    console.error('Error getting appointment:', error);
+    throw error;
+  }
+};
+
+export const updateAppointment = async (appointmentId: string, data: any) => {
+  try {
+    const appointmentRef = doc(db, 'appointments', appointmentId);
+    await updateDoc(appointmentRef, {
+      ...data,
+      updatedAt: Timestamp.now()
+    });
+    return { id: appointmentId, ...data };
+  } catch (error) {
+    console.error('Error updating appointment:', error);
+    throw error;
+  }
+};
+
 export { app, auth, db, onAuthStateChanged };

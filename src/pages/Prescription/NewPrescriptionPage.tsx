@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FormProvider, useForm } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../../contexts/AuthContext';
-import { createPrescription, addPatient } from '../../services/firebase';
+import { createPrescription, addPatient, getAppointmentById } from '../../services/firebase';
 import MainLayout from '../../components/Layout/MainLayout';
 import PatientInfoForm from '../../components/Prescription/PatientInfoForm';
 import MedicationForm from '../../components/Prescription/MedicationForm';
@@ -22,9 +22,11 @@ interface FormStep {
 const NewPrescriptionPage: React.FC = () => {
   const { currentUser, doctorProfile } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   
   const methods = useForm({
     defaultValues: {
@@ -60,6 +62,59 @@ const NewPrescriptionPage: React.FC = () => {
       }
     }
   });
+
+  useEffect(() => {
+    const loadAppointmentData = async () => {
+      const params = new URLSearchParams(location.search);
+      const appointmentId = params.get('appointmentId');
+      
+      if (appointmentId) {
+        setLoading(true);
+        try {
+          const appointment = await getAppointmentById(appointmentId);
+          if (appointment) {
+            methods.reset({
+              patientName: appointment.patientName,
+              age: appointment.age,
+              gender: appointment.gender,
+              contact: appointment.contact,
+              address: appointment.address,
+              medicalHistory: appointment.medicalHistory,
+              allergies: appointment.allergies,
+              visitDate: appointment.appointmentDate,
+              symptoms: appointment.reason,
+              diagnosis: '',
+              medications: [
+                {
+                  name: '',
+                  dosage: '',
+                  frequency: '',
+                  route: 'Oral',
+                  duration: '',
+                  instructions: ''
+                }
+              ],
+              nonPharmacologicalAdvice: '',
+              labTests: '',
+              followUpDate: '',
+              notes: '',
+              doctorInfo: {
+                name: doctorProfile?.name || '',
+                specialization: doctorProfile?.specialization || '',
+                licenseNumber: doctorProfile?.licenseNumber || ''
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error loading appointment data:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadAppointmentData();
+  }, [location.search, methods, doctorProfile]);
 
   const steps: FormStep[] = [
     {
