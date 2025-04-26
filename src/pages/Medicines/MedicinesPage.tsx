@@ -122,16 +122,7 @@ const MedicinesPage: React.FC = () => {
                     Manufacturer
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Composition 1
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Composition 2
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Dosage
+                    Composition
                   </th>
                 </tr>
               </thead>
@@ -156,12 +147,12 @@ const MedicinesPage: React.FC = () => {
                       <div className="text-sm text-gray-900">{medicine.manufacturer || '-'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{medicine.composition1 || '-'}</div>
+                      <div className="text-sm text-gray-900">
+                        {[medicine.composition1, medicine.composition2]
+                          .filter(Boolean)
+                          .join(', ') || '-'}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{medicine.composition2 || '-'}</div>
-                    </td>
-                    
                   </tr>
                 ))}
               </tbody>
