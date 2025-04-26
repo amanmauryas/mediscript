@@ -77,7 +77,7 @@ const MedicationForm: React.FC = () => {
       {fields.map((field, index) => (
         <div 
           key={field.id} 
-          className="p-5 border border-gray-200 rounded-md bg-white shadow-sm hover:shadow-md transition-shadow animate-slide-up"
+          className="p-5 border border-gray-200 rounded-md bg-white shadow-sm hover:shadow-md transition-shadow "
         >
           <div className="flex justify-between items-start mb-4">
             <h4 className="font-medium text-gray-900">Medication #{index + 1}</h4>

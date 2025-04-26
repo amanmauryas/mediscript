@@ -4,9 +4,27 @@ export interface Doctor {
   name: string;
   email: string;
   specialization: string;
+  phone: string;
+  address: string;
+  clinic: {
+    name: string;
+    address: string;
+    phone: string;
+    email: string;
+    license: string;
+    logo?: string;
+    headerImage?: string;
+  };
   licenseNumber: string;
   contact: string;
-  clinicInfo: ClinicInfo;
+  clinicInfo: {
+    name: string;
+    address: string;
+    phone: string;
+    email?: string;
+    logo?: string;
+  };
+  updatedAt: Date;
   createdAt: Date;
 }
 
@@ -25,24 +43,32 @@ export interface Patient {
   age: number;
   gender: 'male' | 'female' | 'other';
   contact: string;
-  address?: string;
-  medicalHistory?: string[];
-  allergies?: string[];
+  address: string;
+  bloodGroup: string;
+  allergies: string[];
+  medicalHistory: string[];
+  doctorId: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Prescription Types
 export interface Prescription {
   id: string;
-  doctorId: string;
   patientId: string;
+  doctorId: string;
   visitDate: Date;
   symptoms: string[];
   diagnosis: string[];
-  medications: Medication[];
-  nonPharmacologicalAdvice?: string[];
-  labTests?: LabTest[];
-  followUpDate?: Date;
-  notes?: string;
+  medications: {
+    id: string;
+    dosage: string;
+    frequency: string;
+    duration: string;
+    instructions: string;
+  }[];
+  notes: string;
+  status: 'active' | 'completed' | 'cancelled';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -50,11 +76,16 @@ export interface Prescription {
 export interface Medication {
   id: string;
   name: string;
+  category: string;
   dosage: string;
   frequency: string;
-  route: string;
-  duration: string;
-  instructions?: string;
+  instructions: string;
+  sideEffects: string[];
+  contraindications: string[];
+  doctorId: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface LabTest {
@@ -106,4 +137,33 @@ export interface FormStep {
   title: string;
   description: string;
   component: React.ReactNode;
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  category: string;
+  doctorId: string;
+  medications: {
+    id: string;
+    dosage: string;
+    frequency: string;
+    duration: string;
+    instructions: string;
+  }[];
+  symptoms: string[];
+  diagnosis: string[];
+  notes: string;
+  lastUsed: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Settings {
+  notifications: boolean;
+  darkMode: boolean;
+  language: string;
+  prescriptionFormat: 'standard' | 'compact' | 'detailed';
+  autoSave: boolean;
+  updatedAt: Date;
 }

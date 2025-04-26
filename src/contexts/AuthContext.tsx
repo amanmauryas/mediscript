@@ -39,6 +39,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setDoctorProfile(doctorData as Doctor);
           } catch (error) {
             console.error('Error fetching doctor profile:', error);
+            // Set a default profile if there's an error
+            setDoctorProfile({
+              id: user.uid,
+              name: user.displayName || '',
+              email: user.email || '',
+              specialization: '',
+              phone: '',
+              address: '',
+              clinic: '',
+              licenseNumber: '',
+              updatedAt: new Date()
+            });
           }
         } else {
           setCurrentUser(null);

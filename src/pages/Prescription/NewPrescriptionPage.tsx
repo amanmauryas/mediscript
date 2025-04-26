@@ -53,12 +53,6 @@ const NewPrescriptionPage: React.FC = () => {
       labTests: '',
       followUpDate: '',
       notes: '',
-      clinicInfo: {
-        name: doctorProfile?.clinicInfo?.name || '',
-        address: doctorProfile?.clinicInfo?.address || '',
-        phone: doctorProfile?.clinicInfo?.phone || '',
-        email: doctorProfile?.clinicInfo?.email || ''
-      },
       doctorInfo: {
         name: doctorProfile?.name || '',
         specialization: doctorProfile?.specialization || '',
@@ -85,12 +79,6 @@ const NewPrescriptionPage: React.FC = () => {
       title: 'Advice & Follow-up',
       description: 'Add non-pharmacological advice and follow-up details',
       component: <AdviceForm />
-    },
-    {
-      id: 'clinic',
-      title: 'Clinic Information',
-      description: 'Review and update clinic details',
-      component: <ClinicInfoForm />
     }
   ];
 
@@ -159,12 +147,7 @@ const NewPrescriptionPage: React.FC = () => {
           specialization: data.doctorInfo.specialization,
           licenseNumber: data.doctorInfo.licenseNumber
         },
-        clinicInfo: {
-          name: data.clinicInfo.name,
-          address: data.clinicInfo.address,
-          phone: data.clinicInfo.phone,
-          email: data.clinicInfo.email || ''
-        }
+        clinicInfo: doctorProfile?.clinicInfo || {}
       };
       
       await createPrescription(prescriptionData);
@@ -194,26 +177,55 @@ const NewPrescriptionPage: React.FC = () => {
       email: currentUser?.email || '',
       specialization: data.doctorInfo.specialization,
       licenseNumber: data.doctorInfo.licenseNumber,
-      contact: '',
-      clinicInfo: {
-        name: data.clinicInfo.name,
-        address: data.clinicInfo.address,
-        phone: data.clinicInfo.phone,
-        email: data.clinicInfo.email || ''
+      phone: doctorProfile?.phone || '',
+      address: doctorProfile?.address || '',
+      clinic: {
+        name: doctorProfile?.clinicInfo?.name || '',
+        address: doctorProfile?.clinicInfo?.address || '',
+        phone: doctorProfile?.clinicInfo?.phone || '',
+        email: doctorProfile?.clinicInfo?.email || '',
+        logo: doctorProfile?.clinicInfo?.logo || ''
       },
-      createdAt: new Date()
+      clinicInfo: doctorProfile?.clinicInfo || {
+        name: '',
+        address: '',
+        phone: '',
+        email: ''
+      },
+      contact: doctorProfile?.contact || '',
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
     
     const patient = {
       id: uuidv4(),
-      name: data.name,
+      name: data.patientName,
       age: Number(data.age),
       gender: data.gender as 'male' | 'female' | 'other',
       contact: data.contact,
       address: data.address,
-      medicalHistory: data.medicalHistory ? data.medicalHistory.split('\n').filter((h: string) => h.trim() !== '') : undefined,
-      allergies: data.allergies ? data.allergies.split('\n').filter((a: string) => a.trim() !== '') : undefined
+      bloodGroup: '',
+      medicalHistory: data.medicalHistory ? data.medicalHistory.split('\n').filter((h: string) => h.trim() !== '') : [],
+      allergies: data.allergies ? data.allergies.split('\n').filter((a: string) => a.trim() !== '') : [],
+      doctorId: currentUser?.uid || '',
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
+
+    const medications = data.medications.map((med: any) => ({
+      id: uuidv4(),
+      name: med.name,
+      category: '',
+      dosage: med.dosage,
+      frequency: med.frequency,
+      instructions: med.instructions,
+      sideEffects: [],
+      contraindications: [],
+      doctorId: currentUser?.uid || '',
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }));
     
     return (
       <PrescriptionPreview
@@ -222,7 +234,7 @@ const NewPrescriptionPage: React.FC = () => {
         visitDate={new Date(data.visitDate)}
         symptoms={symptoms}
         diagnosis={diagnosis}
-        medications={data.medications}
+        medications={medications}
         nonPharmacologicalAdvice={nonPharmacologicalAdvice}
         labTests={labTests}
         followUpDate={data.followUpDate ? new Date(data.followUpDate) : undefined}

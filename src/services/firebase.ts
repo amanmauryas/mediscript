@@ -17,7 +17,11 @@ import {
   getDocs, 
   query, 
   where, 
-  serverTimestamp 
+  serverTimestamp,
+  deleteDoc,
+  orderBy,
+  limit,
+  Timestamp 
 } from 'firebase/firestore';
 
 // Firebase config - replace with your own config
@@ -41,24 +45,33 @@ export const registerUser = async (email: string, password: string, name: string
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(userCredential.user, { displayName: name });
     
-    // Create a doctor document
-    await setDoc(doc(db, 'doctors', userCredential.user.uid), {
+    // Create a user document
+    await setDoc(doc(db, 'users', userCredential.user.uid), {
+      email,
+      role: 'doctor',
+      createdAt: Timestamp.now(),
+      lastLogin: Timestamp.now(),
+      isActive: true
+    });
+
+    // Create a doctor profile
+    await setDoc(doc(db, 'doctorProfiles', userCredential.user.uid), {
       name,
       email,
-      specialization: '', // Empty initially, to be filled later
-      licenseNumber: '', // Empty initially, to be filled later
-      contact: '',
-      clinicInfo: {
-        name: '',
-        address: '',
-        phone: '',
-        email: ''
-      },
-      createdAt: serverTimestamp()
+      specialization: '',
+      phone: '',
+      address: '',
+      clinic: '',
+      licenseNumber: '',
+      updatedAt: Timestamp.now()
     });
+
+    // Create default templates
+    await createDefaultTemplates(userCredential.user.uid);
     
     return userCredential.user;
   } catch (error) {
+    console.error('Registration error:', error);
     throw error;
   }
 };
@@ -67,7 +80,8 @@ export const loginUser = async (email: string, password: string) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Login error:', error);
     throw error;
   }
 };
@@ -83,25 +97,47 @@ export const signOut = async () => {
 // Doctor functions
 export const getDoctorProfile = async (uid: string) => {
   try {
-    const docSnap = await getDoc(doc(db, 'doctors', uid));
+    const docSnap = await getDoc(doc(db, 'doctorProfiles', uid));
     if (docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() };
     } else {
-      throw new Error('Doctor not found');
+      // If profile doesn't exist, create a default one
+      const defaultProfile = {
+        name: '',
+        email: '',
+        specialization: '',
+        phone: '',
+        address: '',
+        clinic: {
+          name: '',
+          address: '',
+          phone: '',
+          email: '',
+          license: '',
+          logo: ''
+        },
+        licenseNumber: '',
+        updatedAt: Timestamp.now()
+      };
+      
+      await setDoc(doc(db, 'doctorProfiles', uid), defaultProfile);
+      return { id: uid, ...defaultProfile };
     }
   } catch (error) {
+    console.error('Error getting doctor profile:', error);
     throw error;
   }
 };
 
 export const updateDoctorProfile = async (uid: string, data: any) => {
   try {
-    await updateDoc(doc(db, 'doctors', uid), {
+    await updateDoc(doc(db, 'doctorProfiles', uid), {
       ...data,
-      updatedAt: serverTimestamp()
+      updatedAt: Timestamp.now()
     });
     return true;
   } catch (error) {
+    console.error('Error updating doctor profile:', error);
     throw error;
   }
 };
@@ -113,8 +149,8 @@ export const addPatient = async (doctorId: string, patientData: any) => {
     await setDoc(patientRef, {
       ...patientData,
       doctorId,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
     });
     return { id: patientRef.id, ...patientData };
   } catch (error) {
@@ -124,13 +160,15 @@ export const addPatient = async (doctorId: string, patientData: any) => {
 
 export const getPatientsByDoctor = async (doctorId: string) => {
   try {
-    const q = query(collection(db, 'patients'), where('doctorId', '==', doctorId));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const q = query(
+      collection(db, 'patients'),
+      where('doctorId', '==', doctorId),
+      orderBy('createdAt', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (error) {
+    console.error('Error getting patients:', error);
     throw error;
   }
 };
@@ -154,8 +192,8 @@ export const createPrescription = async (prescriptionData: any) => {
     const prescriptionRef = doc(collection(db, 'prescriptions'));
     await setDoc(prescriptionRef, {
       ...prescriptionData,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
     });
     return { id: prescriptionRef.id, ...prescriptionData };
   } catch (error) {
@@ -165,13 +203,15 @@ export const createPrescription = async (prescriptionData: any) => {
 
 export const getPrescriptionsByDoctor = async (doctorId: string) => {
   try {
-    const q = query(collection(db, 'prescriptions'), where('doctorId', '==', doctorId));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const q = query(
+      collection(db, 'prescriptions'),
+      where('doctorId', '==', doctorId),
+      orderBy('createdAt', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (error) {
+    console.error('Error getting prescriptions:', error);
     throw error;
   }
 };
@@ -198,6 +238,284 @@ export const getPrescriptionById = async (prescriptionId: string) => {
       throw new Error('Prescription not found');
     }
   } catch (error) {
+    throw error;
+  }
+};
+
+// User functions
+export const getUser = async (userId: string) => {
+  try {
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    return userDoc.exists() ? userDoc.data() : null;
+  } catch (error) {
+    console.error('Error getting user:', error);
+    throw error;
+  }
+};
+
+export const updateUser = async (userId: string, data: any) => {
+  try {
+    await updateDoc(doc(db, 'users', userId), {
+      ...data,
+      updatedAt: Timestamp.now()
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    throw error;
+  }
+};
+
+// Medication functions
+export const getMedicationsByDoctor = async (doctorId: string) => {
+  try {
+    const q = query(
+      collection(db, 'medications'),
+      where('doctorId', '==', doctorId),
+      where('isActive', '==', true),
+      orderBy('name')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Error getting medications:', error);
+    throw error;
+  }
+};
+
+export const getMedication = async (medicationId: string) => {
+  try {
+    const medicationDoc = await getDoc(doc(db, 'medications', medicationId));
+    return medicationDoc.exists() ? { id: medicationDoc.id, ...medicationDoc.data() } : null;
+  } catch (error) {
+    console.error('Error getting medication:', error);
+    throw error;
+  }
+};
+
+export const createMedication = async (data: any) => {
+  try {
+    const newMedicationRef = doc(collection(db, 'medications'));
+    await setDoc(newMedicationRef, {
+      ...data,
+      isActive: true,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
+    });
+    return newMedicationRef.id;
+  } catch (error) {
+    console.error('Error creating medication:', error);
+    throw error;
+  }
+};
+
+export const updateMedication = async (medicationId: string, data: any) => {
+  try {
+    await updateDoc(doc(db, 'medications', medicationId), {
+      ...data,
+      updatedAt: Timestamp.now()
+    });
+  } catch (error) {
+    console.error('Error updating medication:', error);
+    throw error;
+  }
+};
+
+// Template functions
+export const getTemplatesByDoctor = async (doctorId: string) => {
+  try {
+    const q = query(
+      collection(db, 'templates'),
+      where('doctorId', '==', doctorId),
+      orderBy('lastUsed', 'desc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Error getting templates:', error);
+    throw error;
+  }
+};
+
+export const getTemplate = async (templateId: string) => {
+  try {
+    const templateDoc = await getDoc(doc(db, 'templates', templateId));
+    return templateDoc.exists() ? { id: templateDoc.id, ...templateDoc.data() } : null;
+  } catch (error) {
+    console.error('Error getting template:', error);
+    throw error;
+  }
+};
+
+export const createTemplate = async (data: any) => {
+  try {
+    const newTemplateRef = doc(collection(db, 'templates'));
+    await setDoc(newTemplateRef, {
+      ...data,
+      lastUsed: Timestamp.now(),
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
+    });
+    return newTemplateRef.id;
+  } catch (error) {
+    console.error('Error creating template:', error);
+    throw error;
+  }
+};
+
+export const updateTemplate = async (templateId: string, data: any) => {
+  try {
+    await updateDoc(doc(db, 'templates', templateId), {
+      ...data,
+      updatedAt: Timestamp.now()
+    });
+  } catch (error) {
+    console.error('Error updating template:', error);
+    throw error;
+  }
+};
+
+// Settings functions
+export const getSettings = async (userId: string) => {
+  try {
+    const settingsDoc = await getDoc(doc(db, 'settings', userId));
+    return settingsDoc.exists() ? settingsDoc.data() : null;
+  } catch (error) {
+    console.error('Error getting settings:', error);
+    throw error;
+  }
+};
+
+export const updateSettings = async (userId: string, data: any) => {
+  try {
+    await updateDoc(doc(db, 'settings', userId), {
+      ...data,
+      updatedAt: Timestamp.now()
+    });
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    throw error;
+  }
+};
+
+export const createDefaultTemplates = async (doctorId: string) => {
+  try {
+    const defaultTemplates = [
+      {
+        name: 'Common Cold',
+        category: 'General Medicine',
+        description: 'Template for treating common cold symptoms',
+        medications: [
+          {
+            name: 'Paracetamol',
+            dosage: '500mg',
+            frequency: '1-0-1',
+            route: 'Oral',
+            duration: '3 days',
+            instructions: 'After meals'
+          },
+          {
+            name: 'Cetirizine',
+            dosage: '10mg',
+            frequency: '0-0-1',
+            route: 'Oral',
+            duration: '3 days',
+            instructions: 'At night'
+          }
+        ],
+        nonPharmacologicalAdvice: [
+          'Take plenty of rest',
+          'Stay hydrated',
+          'Use steam inhalation',
+          'Avoid cold drinks and foods'
+        ],
+        labTests: [],
+        notes: 'Follow up if symptoms persist beyond 3 days'
+      },
+      {
+        name: 'Hypertension Management',
+        category: 'Cardiology',
+        description: 'Template for managing hypertension',
+        medications: [
+          {
+            name: 'Amlodipine',
+            dosage: '5mg',
+            frequency: '1-0-0',
+            route: 'Oral',
+            duration: '30 days',
+            instructions: 'In the morning'
+          },
+          {
+            name: 'Losartan',
+            dosage: '50mg',
+            frequency: '1-0-0',
+            route: 'Oral',
+            duration: '30 days',
+            instructions: 'In the morning'
+          }
+        ],
+        nonPharmacologicalAdvice: [
+          'Reduce salt intake',
+          'Regular exercise',
+          'Maintain healthy weight',
+          'Limit alcohol consumption',
+          'Quit smoking'
+        ],
+        labTests: [
+          'Complete Blood Count',
+          'Lipid Profile',
+          'Kidney Function Test',
+          'Electrolytes'
+        ],
+        notes: 'Monitor blood pressure daily and maintain a log'
+      },
+      {
+        name: 'Type 2 Diabetes',
+        category: 'Endocrinology',
+        description: 'Template for managing Type 2 Diabetes',
+        medications: [
+          {
+            name: 'Metformin',
+            dosage: '500mg',
+            frequency: '1-0-1',
+            route: 'Oral',
+            duration: '30 days',
+            instructions: 'After meals'
+          },
+          {
+            name: 'Glimepiride',
+            dosage: '2mg',
+            frequency: '1-0-0',
+            route: 'Oral',
+            duration: '30 days',
+            instructions: 'Before breakfast'
+          }
+        ],
+        nonPharmacologicalAdvice: [
+          'Follow diabetic diet',
+          'Regular exercise',
+          'Monitor blood sugar levels',
+          'Maintain healthy weight',
+          'Regular foot care'
+        ],
+        labTests: [
+          'Fasting Blood Sugar',
+          'HbA1c',
+          'Lipid Profile',
+          'Kidney Function Test'
+        ],
+        notes: 'Monitor blood sugar levels daily and maintain a log'
+      }
+    ];
+
+    for (const template of defaultTemplates) {
+      await createTemplate({
+        doctorId,
+        ...template,
+        lastUsed: null
+      });
+    }
+  } catch (error) {
+    console.error('Error creating default templates:', error);
     throw error;
   }
 };

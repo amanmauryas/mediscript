@@ -2,8 +2,72 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Allow read/write access to all documents during development
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if true;
+    }
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isDoctor() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'doctor';
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isDoctor());
+      allow write: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Doctor profiles collection
+    match /doctorProfiles/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Patients collection
+    match /patients/{patientId} {
+      allow read: if isAuthenticated() && isDoctor();
+      allow create: if isAuthenticated() && isDoctor();
+      allow update, delete: if isAuthenticated() && isDoctor() && 
+        resource.data.doctorId == request.auth.uid;
+    }
+
+    // Prescriptions collection
+    match /prescriptions/{prescriptionId} {
+      allow read: if isAuthenticated() && isDoctor();
+      allow create: if isAuthenticated() && isDoctor();
+      allow update, delete: if isAuthenticated() && isDoctor() && 
+        resource.data.doctorId == request.auth.uid;
+    }
+
+    // Medications collection
+    match /medications/{medicationId} {
+      allow read: if isAuthenticated() && isDoctor();
+      allow create: if isAuthenticated() && isDoctor();
+      allow update, delete: if isAuthenticated() && isDoctor() && 
+        resource.data.doctorId == request.auth.uid;
+    }
+
+    // Templates collection
+    match /templates/{templateId} {
+      allow read: if isAuthenticated() && isDoctor();
+      allow create: if isAuthenticated() && isDoctor();
+      allow update, delete: if isAuthenticated() && isDoctor() && 
+        resource.data.doctorId == request.auth.uid;
+    }
+
+    // Settings collection
+    match /settings/{userId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() && isOwner(userId);
     }
   }
 }

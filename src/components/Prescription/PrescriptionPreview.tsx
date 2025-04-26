@@ -34,28 +34,32 @@ const PrescriptionPreview: React.FC<PrescriptionPreviewProps> = ({
   };
 
   const handleDownload = async () => {
-    const pdfData = await generatePDF({
-      doctor,
-      patient,
-      visitDate,
-      symptoms,
-      diagnosis,
-      medications,
-      nonPharmacologicalAdvice,
-      labTests,
-      followUpDate,
-      notes
-    });
-    
-    const blob = new Blob([pdfData], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Prescription_${patient.name}_${format(visitDate, 'yyyy-MM-dd')}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    try {
+      const pdfData = await generatePDF({
+        doctor,
+        patient,
+        visitDate,
+        symptoms,
+        diagnosis,
+        medications,
+        nonPharmacologicalAdvice,
+        labTests,
+        followUpDate,
+        notes
+      });
+      
+      const blob = new Blob([pdfData], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Prescription_${patient.name}_${format(visitDate, 'yyyy-MM-dd')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    }
   };
 
   return (
@@ -84,16 +88,16 @@ const PrescriptionPreview: React.FC<PrescriptionPreviewProps> = ({
         <div className="border-b-2 border-primary-500 pb-4 mb-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-primary-600">{doctor.clinicInfo.name}</h1>
-              <p className="text-gray-600">{doctor.clinicInfo.address}</p>
+              <h1 className="text-2xl font-bold text-primary-600">{doctor.clinic.name}</h1>
+              <p className="text-gray-600">{doctor.clinic.address}</p>
               <p className="text-gray-600">
-                Phone: {doctor.clinicInfo.phone} 
-                {doctor.clinicInfo.email && ` | Email: ${doctor.clinicInfo.email}`}
+                Phone: {doctor.clinic.phone} 
+                {doctor.clinic.email && ` | Email: ${doctor.clinic.email}`}
               </p>
             </div>
-            {doctor.clinicInfo.logo && (
+            {doctor.clinic.logo && (
               <img 
-                src={doctor.clinicInfo.logo} 
+                src={doctor.clinic.logo} 
                 alt="Clinic Logo" 
                 className="h-16 w-auto object-contain"
               />
@@ -158,7 +162,7 @@ const PrescriptionPreview: React.FC<PrescriptionPreviewProps> = ({
                 <span className="text-gray-600 mr-2">{index + 1}.</span>
                 <div className="flex-1">
                   <p className="font-medium">{medication.name} - {medication.dosage}</p>
-                  <p className="text-gray-700">{medication.frequency} | {medication.route} | Duration: {medication.duration}</p>
+                  <p className="text-gray-700">{medication.frequency}</p>
                   {medication.instructions && (
                     <p className="text-gray-600 text-sm mt-1 italic">{medication.instructions}</p>
                   )}
@@ -198,28 +202,24 @@ const PrescriptionPreview: React.FC<PrescriptionPreviewProps> = ({
           </div>
         )}
 
-        {/* Additional Notes */}
+        {/* Notes */}
         {notes && (
-          <div className="mb-8">
+          <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2">Notes</h3>
             <p className="text-gray-700">{notes}</p>
           </div>
         )}
 
         {/* Signature */}
-        <div className="mt-12 flex justify-end">
-          <div className="text-center">
-            <div className="border-t border-gray-400 pt-2 w-48">
+        <div className="mt-12 border-t border-gray-200 pt-6">
+          <div className="flex justify-end">
+            <div className="text-center">
+              <div className="border-t border-gray-400 w-48 mb-2"></div>
               <p className="font-semibold">{doctor.name}</p>
-              <p className="text-gray-600 text-sm">{doctor.specialization}</p>
+              <p className="text-sm text-gray-600">{doctor.specialization}</p>
+              <p className="text-sm text-gray-600">License: {doctor.licenseNumber}</p>
             </div>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-12 pt-4 border-t border-gray-200 text-center text-gray-500 text-sm">
-          <p>This prescription is valid for 30 days from the date of issue.</p>
-          <p>Keep all medications out of reach of children.</p>
         </div>
       </div>
     </div>
