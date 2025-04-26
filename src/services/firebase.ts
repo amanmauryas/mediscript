@@ -555,23 +555,17 @@ export const importMedicinesFromCSV = async (doctorId: string, csvData: string) 
             case 'name':
               medicine.name = value;
               break;
+            case 'manufacturer_name':
+              medicine.manufacturer = value;
+              break;
+            case 'short_composition1':
+              medicine.composition1 = value;
+              break;
+            case 'short_composition2':
+              medicine.composition2 = value;
+              break;
             case 'category':
               medicine.category = value;
-              break;
-            case 'dosage':
-              medicine.dosage = value;
-              break;
-            case 'frequency':
-              medicine.frequency = value;
-              break;
-            case 'instructions':
-              medicine.instructions = value;
-              break;
-            case 'sideeffects':
-              medicine.sideEffects = value.split(';').map((s: string) => s.trim());
-              break;
-            case 'contraindications':
-              medicine.contraindications = value.split(';').map((s: string) => s.trim());
               break;
           }
         }
