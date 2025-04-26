@@ -41,7 +41,7 @@ export const generatePDF = async (data: PrescriptionData): Promise<Uint8Array> =
   doc.setFontSize(10);
 
   // Page margins
-  const margin = 20;
+  const margin = 15;
   const pageWidth = doc.internal.pageSize.width;
   let yPos = margin;
 
@@ -52,63 +52,39 @@ export const generatePDF = async (data: PrescriptionData): Promise<Uint8Array> =
     return y + lineHeight * lines.length;
   };
 
-  // Add watermark
-  doc.setTextColor(240, 240, 240);
-  doc.setFontSize(60);
-  doc.text('PRESCRIPTION', pageWidth / 2, pageWidth / 2, { angle: 45, align: 'center' });
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(10);
 
-  // Header - Clinic Info with border
-  doc.setDrawColor(15, 82, 186);
-  doc.setLineWidth(0.5);
-  doc.rect(margin, yPos, pageWidth - 2 * margin, 30);
   
   // Add header image if exists
-  if (doctor.clinic.headerImage) {
-    try {
-      const img = new Image();
-      img.src = doctor.clinic.headerImage;
-      await new Promise((resolve) => {
-        img.onload = () => {
-          const imgWidth = 40;
-          const imgHeight = (img.height * imgWidth) / img.width;
-          doc.addImage(img, 'JPEG', margin + 5, yPos + 5, imgWidth, imgHeight);
-          resolve(null);
-        };
-      });
-    } catch (error) {
-      console.error('Error loading header image:', error);
-    }
-  }
-  
-  doc.setFontSize(16);
-  doc.setTextColor(15, 82, 186);
-  doc.setFont('helvetica', 'bold');
-  doc.text(doctor.clinic.name, margin + 5, yPos + 8);
-  
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.setFont('helvetica', 'normal');
-  yPos = addWrappedText(doctor.clinic.address, margin + 5, yPos + 15, pageWidth - 2 * margin - 10, 5);
-  
-  doc.text(`Phone: ${doctor.clinic.phone}${doctor.clinic.email ? ` | Email: ${doctor.clinic.email}` : ''}`, margin + 5, yPos);
-  yPos += 15;
+if (doctor.clinic.headerImage) {
+  try {
+    const img = new Image();
+    img.src = doctor.clinic.headerImage;
+    await new Promise((resolve) => {
+      img.onload = () => {
+        // Define desired full page width
+        const availableWidth = pageWidth - 2 * margin; // excluding margins
+        const imgOriginalWidth = 800;
+        const imgOriginalHeight = 200;
 
-  // Doctor Info with background
-  doc.setFillColor(240, 240, 240);
-  doc.rect(margin, yPos, pageWidth - 2 * margin, 20, 'F');
+        // Maintain aspect ratio
+        const imgHeight = (imgOriginalHeight * availableWidth) / imgOriginalWidth;
+
+        // Add image to PDF
+        doc.addImage(img, 'JPEG', margin, margin, availableWidth, imgHeight);
+        resolve(null);
+      };
+    });
+
+    // After image is added, move yPos below the image
+    yPos = margin + ((200 * (pageWidth - 2 * margin)) / 800) + 10; // Image height + small gap
+
+  } catch (error) {
+    console.error('Error loading header image:', error);
+  }
+}
+
   
-  doc.setFontSize(12);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont('helvetica', 'bold');
-  doc.text(doctor.name, margin + 5, yPos + 8);
-  
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(doctor.specialization, margin + 5, yPos + 15);
-  doc.text(`License: ${doctor.licenseNumber}`, pageWidth - margin - 5, yPos + 15, { align: 'right' });
-  yPos += 25;
+
 
   // Patient Info with border
   doc.setDrawColor(200, 200, 200);
@@ -161,43 +137,46 @@ export const generatePDF = async (data: PrescriptionData): Promise<Uint8Array> =
   const diagnosisHeight = diagnosisLines.length * 5;
   yPos += Math.max(symptomsHeight, diagnosisHeight) + 20;
 
-  // Rx Symbol with decorative line
-  doc.setDrawColor(15, 82, 186);
-  doc.setLineWidth(0.5);
-  doc.line(margin, yPos, pageWidth - margin, yPos);
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('℞', margin + 5, yPos + 8);
-  yPos += 15;
 
-  // Medications with table-like format
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Medications', margin, yPos);
-  yPos += 8;
+  // Medications with Table-like Format
+doc.setFontSize(11);
+doc.setFont('helvetica', 'bold');
+doc.text('Medications', margin, yPos);
+yPos += 8;
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  
-  medications.forEach((med, index) => {
-    // Draw a light background for each medication
-    doc.setFillColor(248, 248, 248);
-    doc.rect(margin, yPos - 5, pageWidth - 2 * margin, 20, 'F');
-    
-    doc.text(`${index + 1}. ${med.name}`, margin + 5, yPos);
-    doc.text(`Dosage: ${med.dosage}`, margin + 5, yPos + 5);
-    doc.text(`Frequency: ${med.frequency}`, margin + 5, yPos + 10);
-    
-    if (med.instructions) {
-      doc.setFontSize(9);
-      doc.setTextColor(100, 100, 100);
-      yPos = addWrappedText(`Instructions: ${med.instructions}`, margin + 5, yPos + 15, pageWidth - 2 * margin - 10, 4);
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-    }
-    
-    yPos += 5;
-  });
+// Table Header
+doc.setFont('helvetica', 'bold');
+doc.setFontSize(10);
+doc.setFillColor(220, 220, 220); // Light grey background
+doc.rect(margin, yPos - 5, pageWidth - 2 * margin, 10, 'F');
+
+// Define column widths
+const col1 = margin + 5; // Medicine Name
+const col2 = margin + 85; // Dosage
+const col3 = margin + 135; // Frequency
+
+doc.text('Medicine Name', col1, yPos);
+doc.text('Dosage', col2, yPos);
+doc.text('Frequency', col3, yPos);
+
+yPos += 10;
+
+// Table Rows
+doc.setFont('helvetica', 'normal');
+
+medications.forEach((med, index) => {
+  // Row background (alternating light fill for better readability)
+  if (index % 2 === 0) {
+    doc.setFillColor(248, 248, 248); // Very light grey
+    doc.rect(margin, yPos - 5, pageWidth - 2 * margin, 10, 'F');
+  }
+
+  doc.text(med.name, col1, yPos);
+  doc.text(med.dosage, col2, yPos);
+  doc.text(med.frequency, col3, yPos);
+
+  yPos += 10; // Move to next row
+});
 
   // Non-Pharmacological Advice with icon
   doc.setFontSize(11);
