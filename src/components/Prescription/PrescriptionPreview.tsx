@@ -65,14 +65,7 @@ const PrescriptionPreview: React.FC<PrescriptionPreviewProps> = ({
   return (
     <div className="relative">
       {/* Actions bar */}
-      <div className="sticky top-0 z-10 bg-white p-3 border-b border-gray-200 flex justify-end space-x-2 no-print">
-        <button 
-          onClick={handlePrint}
-          className="btn-secondary flex items-center text-gray-600"
-        >
-          <Printer size={16} className="mr-1" />
-          Print
-        </button>
+      <div className="top-0 z-10 bg-white p-3 border-b border-gray-200 flex justify-end space-x-2 no-print">
         <button 
           onClick={handleDownload}
           className="btn-primary flex items-center"
@@ -84,33 +77,7 @@ const PrescriptionPreview: React.FC<PrescriptionPreviewProps> = ({
 
       {/* Prescription preview */}
       <div className="p-8 bg-white border border-gray-200 shadow-lg prescription-preview">
-        {/* Header */}
-        <div className="border-b-2 border-primary-500 pb-4 mb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-primary-600">{doctor.clinic.name}</h1>
-              <p className="text-gray-600">{doctor.clinic.address}</p>
-              <p className="text-gray-600">
-                Phone: {doctor.clinic.phone} 
-                {doctor.clinic.email && ` | Email: ${doctor.clinic.email}`}
-              </p>
-            </div>
-            {doctor.clinic.logo && (
-              <img 
-                src={doctor.clinic.logo} 
-                alt="Clinic Logo" 
-                className="h-16 w-auto object-contain"
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Doctor Info */}
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold">{doctor.name}</h2>
-          <p className="text-gray-700">{doctor.specialization}</p>
-          <p className="text-gray-600">License: {doctor.licenseNumber}</p>
-        </div>
+  
 
         {/* Patient Info */}
         <div className="border-t border-b border-gray-200 py-4 mb-6">
